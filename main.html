@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ηλεκτρονική Τάξη ERP</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        header {
+            background-color: #007bff;
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        nav {
+            background-color: #343a40;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        nav a {
+            color: white;
+            margin-right: 20px;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        nav a:hover {
+            background-color: #007bff;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        .form-section {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        input[type="text"], input[type="password"], input[type="submit"], textarea {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: #343a40;
+            color: white;
+            margin-top: 20px;
+        }
+        .page {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        textarea {
+            height: 150px;
+        }
+        .task-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .task-list li {
+            background-color: #f1f1f1;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .task-date {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
+    <script>
+        let teachers = []; // Λίστα καθηγητών
+        let currentTeacher = null; // Αποθήκευση του τρέχοντα καθηγητή
+
+        function showPage(pageId) {
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        window.onload = function() {
+            showPage('home');
+        };
+
+        function signupTeacher() {
+            const username = document.getElementById('teacher_username').value;
+            const password = document.getElementById('teacher_password').value;
+
+            // Έλεγχος αν το όνομα χρήστη υπάρχει ήδη
+            const existingTeacher = teachers.find(teacher => teacher.username === username);
+            if (existingTeacher) {
+                alert('Το όνομα χρήστη είναι ήδη καταχωρημένο. Παρακαλώ επιλέξτε άλλο.');
+                return;
+            }
+
+            // Δημιουργία νέου καθηγητή
+            const newTeacher = { username, password, classes: [] };
+            teachers.push(newTeacher);
+            alert('Ο καθηγητής εγγράφηκε επιτυχώς!');
+            showPage('teacherLogin');
+        }
+
+        function loginTeacher() {
+            const username = document.getElementById('login_teacher_username').value;
+            const password = document.getElementById('login_teacher_password').value;
+
+            const teacher = teachers.find(teacher => teacher.username === username && teacher.password === password);
+            if (teacher) {
+                alert('Σύνδεση επιτυχής');
+                currentTeacher = teacher; // Αποθήκευση του τρέχοντα καθηγητή
+                showPage('teacherDashboard');
+                displayClasses(); // Εμφάνιση των τάξεων του καθηγητή
+            } else {
+                alert('Λάθος στοιχεία σύνδεσης');
+            }
+        }
+
+        function createClass() {
+            const className = document.getElementById('class_name').value;
+            const studentPassword = document.getElementById('student_password').value;
+
+            // Δημιουργία νέας τάξης
+            const newClass = { className, studentPassword, tasks: [] };
+            currentTeacher.classes.push(newClass);
+            alert('Η τάξη δημιουργήθηκε επιτυχώς!');
+            document.getElementById('class_name').value = ''; // Καθαρισμός πεδίου
+            document.getElementById('student_password').value = ''; // Καθαρισμός πεδίου
+            displayClasses(); // Εμφάνιση των τάξεων
+        }
+
+        function displayClasses() {
+            const classList = document.getElementById('classList');
+            classList.innerHTML = '';
+
+            currentTeacher.classes.forEach((classObj, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span>${classObj.className}</span>
+                                <button class="btn" onclick="selectClass(${index})">Επιλέξτε</button>`;
+                classList.appendChild(li);
+            });
+        }
+
+        let currentClass = null; // Αποθήκευση της τρέχουσας τάξης
+
+        function selectClass(index) {
+            currentClass = currentTeacher.classes[index]; // Αποθήκευση της επιλεγμένης τάξης
+            showPage('teacherClassDashboard');
+            showTasks(currentClass); // Εμφάνιση των καθηκόντων της τάξης
+        }
+
+        function addTask() {
+            const task = document.getElementById('task_description').value;
+            const taskDate = new Date().toLocaleDateString('el-GR', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            if (currentClass) {
+                currentClass.tasks.push({ task, taskDate });
+                alert('Το καθήκον προστέθηκε επιτυχώς!');
+                document.getElementById('task_description').value = ''; // Καθαρισμός πεδίου περιγραφής
+                showTasks(currentClass); // Εμφάνιση των καθηκόντων
+            }
+        }
+
+        function loginStudent() {
+            const className = document.getElementById('student_class_name').value;
+            const password = document.getElementById('student_login_password').value;
+
+            // Έλεγχος αν η τάξη και ο κωδικός είναι σωστά
+            const classObj = currentTeacher.classes.find(c => c.className === className && c.studentPassword === password);
+            if (classObj) {
+                alert('Σύνδεση μαθητή επιτυχής');
+                showPage('studentDashboard');
+                showTasks(classObj); // Εμφάνιση των καθηκόντων για τη συγκεκριμένη τάξη
+            } else {
+                alert('Λάθος κωδικός τάξης');
+            }
+        }
+
+        function showTasks(classObj) {
+            const taskListStudent = document.getElementById('taskListStudent');
+            const taskListTeacher = document.getElementById('taskListTeacher');
+            taskListStudent.innerHTML = '';
+            taskListTeacher.innerHTML = '';
+
+            if (classObj) {
+                classObj.tasks.forEach(task => {
+                    const liStudent = document.createElement('li');
+                    liStudent.innerHTML = `<span>${task.task}</span> <span class="task-date">${task.taskDate}</span>`;
+                    taskListStudent.appendChild(liStudent);
+
+                    const liTeacher = document.createElement('li');
+                    liTeacher.innerHTML = `<span>${task.task}</span> <span class="task-date">${task.taskDate}</span>`;
+                    taskListTeacher.appendChild(liTeacher);
+                });
+            }
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Ηλεκτρονική Τάξη ERP</h1>
+    </header>
+
+    <nav>
+        <a onclick="showPage('home')">Αρχική Σελίδα</a>
+        <a onclick="showPage('teacherSignup')">Εγγραφή Καθηγητή</a>
+        <a onclick="showPage('teacherLogin')">Σύνδεση Καθηγητή</a>
+        <a onclick="showPage('studentLogin')">Σύνδεση Μαθητή</a>
+    </nav>
+
+    <div class="container">
+        <div id="home" class="page active">
+            <h2>Καλώς ήρθατε στην Ηλεκτρονική Τάξη ERP!</h2>
+            <p>Αυτή είναι η πλατφόρμα για την διαχείριση τάξεων και καθηκόντων.</p>
+        </div>
+
+        <!-- Εγγραφή Καθηγητή -->
+        <div id="teacherSignup" class="page">
+            <h2>Εγγραφή Καθηγητή</h2>
+            <form class="form-section" onsubmit="signupTeacher(); return false;">
+                <label for="teacher_username">Όνομα Χρήστη:</label>
+                <input type="text" id="teacher_username" name="teacher_username" required>
+
+                <label for="teacher_password">Κωδικός Πρόσβασης:</label>
+                <input type="password" id="teacher_password" name="teacher_password" required>
+
+                <input type="submit" value="Εγγραφή" class="btn">
+            </form>
+        </div>
+
+        <!-- Σύνδεση Καθηγητή -->
+        <div id="teacherLogin" class="page">
+            <h2>Σύνδεση Καθηγητή</h2>
+            <form class="form-section" onsubmit="loginTeacher(); return false;">
+                <label for="login_teacher_username">Όνομα Χρήστη:</label>
+                <input type="text" id="login_teacher_username" name="login_teacher_username" required>
+
+                <label for="login_teacher_password">Κωδικός Πρόσβασης:</label>
+                <input type="password" id="login_teacher_password" name="login_teacher_password" required>
+
+                <input type="submit" value="Σύνδεση" class="btn">
+            </form>
+        </div>
+
+        <!-- Πίνακας Ελέγχου Καθηγητή -->
+        <div id="teacherDashboard" class="page">
+            <h2>Πίνακας Ελέγχου Καθηγητή</h2>
+            <h3>Δημιουργία Τάξης</h3>
+            <form class="form-section" id="classSection" onsubmit="createClass(); return false;">
+                <label for="class_name">Όνομα Τάξης:</label>
+                <input type="text" id="class_name" name="class_name" required>
+
+                <label for="student_password">Κωδικός Πρόσβασης Μαθητή:</label>
+                <input type="password" id="student_password" name="student_password" required>
+
+                <input type="submit" value="Δημιουργία Τάξης" class="btn">
+            </form>
+            <h3>Τάξεις:</h3>
+            <ul id="classList" class="task-list">
+                <!-- Εδώ θα εμφανίζονται οι τάξεις -->
+            </ul>
+        </div>
+
+        <!-- Πίνακας Ελέγχου Τάξης -->
+        <div id="teacherClassDashboard" class="page">
+            <h2>Πίνακας Ελέγχου Τάξης</h2>
+            <h3>Προσθήκη Καθήκοντος</h3>
+            <form class="form-section" id="taskSection" onsubmit="addTask(); return false;">
+                <label for="task_description">Προσθήκη Καθήκοντος:</label>
+                <textarea id="task_description" name="task_description" required></textarea>
+
+                <input type="submit" value="Προσθήκη Καθήκοντος" class="btn">
+            </form>
+            <h3>Καθήκοντα:</h3>
+            <ul id="taskListTeacher" class="task-list">
+                <!-- Εδώ θα εμφανίζονται τα καθήκοντα -->
+            </ul>
+        </div>
+
+        <!-- Σύνδεση Μαθητή -->
+        <div id="studentLogin" class="page">
+            <h2>Σύνδεση Μαθητή</h2>
+            <form class="form-section" onsubmit="loginStudent(); return false;">
+                <label for="student_class_name">Όνομα Τάξης:</label>
+                <input type="text" id="student_class_name" name="student_class_name" required>
+
+                <label for="student_login_password">Κωδικός Πρόσβασης:</label>
+                <input type="password" id="student_login_password" name="student_login_password" required>
+
+                <input type="submit" value="Σύνδεση" class="btn">
+            </form>
+        </div>
+
+        <!-- Πίνακας Ελέγχου Μαθητή -->
+        <div id="studentDashboard" class="page">
+            <h2>Τα Καθήκοντά Σου</h2>
+            <ul id="taskListStudent" class="task-list">
+                <!-- Εδώ θα εμφανίζονται τα καθήκοντα -->
+            </ul>
+        </div>
+    </div>
+
+    <footer>
+        <p>© 2024 Ηλεκτρονική Τάξη ERP. Όλα τα δικαιώματα κατοχυρωμένα.</p>
+    </footer>
+
+</body>
+</html>
